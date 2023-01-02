@@ -1,0 +1,3 @@
+[submodule "dependencies/GodotTouchInputManager"]
+	path = dependencies/GodotTouchInputManager
+	url = https://github.com/Federico-Ciuffardi/GodotTouchInputManager
