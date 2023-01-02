@@ -26,11 +26,12 @@ void fragment() {
 	vec2 base_uv = UV;
 	vec4 albedo_tex = texture(texture_albedo,base_uv);
 	float dist = length(UV - 0.5);
-	ALBEDO = albedo.rgb * albedo_tex.rgb * pow(1.0 - dist * 2.0, falloff);
+	vec2 c = fract(UV.xy * 12.0);
+	ALBEDO = vec3(c.x < 0.5 ? 0.0 : 1.0, c.y < 0.5 ? 0.0 : 1.0, c.y < 0.5 ? 0.0 : 1.0);
+	ALBEDO *= albedo.rgb * albedo_tex.rgb * pow(1.0 - dist * 2.0, falloff);
 	METALLIC = metallic;
 	ROUGHNESS = roughness;
 	SPECULAR = specular;
-	
 	
 	if (dist > 0.5)
 		discard;
