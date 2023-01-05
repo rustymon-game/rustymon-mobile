@@ -102,6 +102,10 @@ common/drop_mouse_on_gui_input_disabled=true
 
 pointing/emulate_touch_from_mouse=true
 
+[layer_names]
+
+3d_physics/layer_2="camera_raycast_floor"
+
 [mono]
 
 project/assembly_name="RustymonMobile"

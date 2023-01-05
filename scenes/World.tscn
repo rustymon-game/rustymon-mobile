@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://default_env.tres" type="Environment" id=1]
 [ext_resource path="res://material/WorldFloor.tres" type="Material" id=2]
@@ -6,6 +6,12 @@
 
 [sub_resource type="PlaneMesh" id=1]
 size = Vector2( 200, 200 )
+
+[sub_resource type="PhysicsMaterial" id=2]
+absorbent = true
+
+[sub_resource type="CylinderShape" id=3]
+radius = 100.0
 
 [node name="Node" type="Node"]
 
@@ -21,3 +27,10 @@ transform = Transform( -0.172359, -0.640492, 0.748373, -0.727993, 0.594626, 0.34
 shadow_enabled = true
 
 [node name="Player" parent="." instance=ExtResource( 3 )]
+
+[node name="WorldFloorStaticBody" type="StaticBody" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0 )
+physics_material_override = SubResource( 2 )
+
+[node name="CollisionShape" type="CollisionShape" parent="WorldFloorStaticBody"]
+shape = SubResource( 3 )
