@@ -4,7 +4,19 @@ extends CSGBox
 const MAX_SCROLLING = 36
 
 # length of the ray used for mouse point tracing (must be > 100)
-const RAY_LENGTH = 300
+const RAY_LENGTH = 500
+
+export(NodePath) var zoom_min_path
+export(NodePath) var zoom_max_path
+
+export(float) var zoom = 1.0
+export(float) var min_zoom = 0.1
+export(float) var max_zoom = 1.0
+export(float) var min_fov = 70.0
+export(float) var max_fov = 50.0
+
+onready var zoom_min = get_node(zoom_min_path)
+onready var zoom_max = get_node(zoom_max_path)
 
 # whether the primary mouse button is currently pressed
 var mouse_pressed = false
@@ -24,7 +36,7 @@ var current_scrolling = 5
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	pass
+	recompute_zoom()
 
 
 func _physics_process(delta):
@@ -60,22 +72,25 @@ func _cast_ray_to_floor(position: Vector2): # -> Optional<Vector3>
 
 func _input(event):
 	if event is InputEventScreenPinch:
-		if event.relative < 0:
-			if current_scrolling < MAX_SCROLLING:
-				current_scrolling += 1
-				$ViewAnchor.translation.y += 0.5
-				$ViewAnchor/PlayerView.rotation_degrees.x -= 0.5
-		elif event.relative > 0:
-			if current_scrolling > 0:
-				current_scrolling -= 1
-				$ViewAnchor.translation.y -= 0.5
-				$ViewAnchor/PlayerView.rotation_degrees.x += 0.5
+		zoom += event.relative * 0.001
+		recompute_zoom()
 	
 	if event is InputEventScreenDrag:
 		mouse_pos = event.position
-	
+
 	if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
 		mouse_pressed = event.pressed
 		mouse_pos = event.position
-		if not event.pressed:
-			drag_start_angle = $ViewAnchor.rotation.y
+
+func recompute_zoom():
+	if zoom > max_zoom:
+		zoom = max_zoom
+	if zoom < min_zoom:
+		zoom = min_zoom
+
+	var t = 1.0 - zoom
+	t = t * t
+
+	$ViewAnchor/PlayerView.fov = lerp(min_fov, max_fov, t)
+	$ViewAnchor/PlayerView.transform.origin = zoom_min.transform.origin.linear_interpolate(zoom_max.transform.origin, t)
+	$ViewAnchor/PlayerView.transform.basis = zoom_min.transform.basis.slerp(zoom_max.transform.basis, t)
