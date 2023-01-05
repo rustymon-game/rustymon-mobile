@@ -1,16 +1,10 @@
 extends CSGBox
 
-# radius in pixels around the player where initial touch events for screen drag are ignored
-const DEAD_RADIUS = 100
+# for scrolling, the highest (max) value; the min value is zero
+const MAX_SCROLLING = 36
 
-# delta to the field of view (FOV) for the camera when pinching (zooming with two fingers or mouse wheel)
-const FOV_CHANGE = 1.0
-
-# TODO
+# length of the ray used for mouse point tracing (must be > 100)
 const RAY_LENGTH = 300
-
-# the rotation of the ViewAnchor when the drag started
-var previous_rotation = 0.0
 
 # whether the primary mouse button is currently pressed
 var mouse_pressed = false
@@ -21,11 +15,16 @@ var mouse_pos: Vector2
 # for dragging, last known position on the world's floor
 var start_dragging_pos  # type: Vector3
 
+# for dragging, the start Y position of the camera
 var drag_start_angle = 0
+
+# for scrolling, the current scroll level
+var current_scrolling = 5
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	previous_rotation = $ViewAnchor.rotation.y
+	pass
 
 
 func _physics_process(delta):
@@ -36,13 +35,12 @@ func _physics_process(delta):
 		current_pos = current_pos.rotated(Vector3(0, 1, 0), -$ViewAnchor.rotation.y)
 		if start_dragging_pos == null:
 			start_dragging_pos = current_pos
-			drag_start_angle = atan2(start_dragging_pos.z, start_dragging_pos.x)
+			drag_start_angle = $ViewAnchor.rotation.y
 			return
 		var start_angle = atan2(start_dragging_pos.z, start_dragging_pos.x)
 		var current_angle = atan2(current_pos.z, current_pos.x)
 		var diff = start_angle - current_angle
-		print("prev=", start_angle, " current=", current_angle, " diff=", diff, " rotY=", $ViewAnchor.rotation.y)
-		$ViewAnchor.rotation.y = -diff
+		$ViewAnchor.rotation.y = drag_start_angle - diff
 	else:
 		start_dragging_pos = null
 
@@ -51,11 +49,9 @@ func _cast_ray_to_floor(position: Vector2): # -> Optional<Vector3>
 	var camera = $ViewAnchor/PlayerView
 	var from = camera.project_ray_origin(position)
 	var to = from + camera.project_ray_normal(position) * RAY_LENGTH
-	# print("ray from ", from, " to ", to, " for ", camera)
 	
 	var space_state = get_world().direct_space_state
-	# use global coordinates, not local to node
-	var result = space_state.intersect_ray(from, to, [], 2, false, true)
+	var result = space_state.intersect_ray(to, from, [], 2, false, true)
 	
 	if not result.empty():
 		return result["position"]
@@ -64,13 +60,22 @@ func _cast_ray_to_floor(position: Vector2): # -> Optional<Vector3>
 
 func _input(event):
 	if event is InputEventScreenPinch:
-		if event.relative > 0:
-			$ViewAnchor/PlayerView.fov -= FOV_CHANGE
-		elif event.relative < 0:
-			$ViewAnchor/PlayerView.fov += FOV_CHANGE
+		if event.relative < 0:
+			if current_scrolling < MAX_SCROLLING:
+				current_scrolling += 1
+				$ViewAnchor.translation.y += 0.5
+				$ViewAnchor/PlayerView.rotation_degrees.x -= 0.5
+		elif event.relative > 0:
+			if current_scrolling > 0:
+				current_scrolling -= 1
+				$ViewAnchor.translation.y -= 0.5
+				$ViewAnchor/PlayerView.rotation_degrees.x += 0.5
 	
 	if event is InputEventScreenDrag:
-		mouse_pos = event.position	
+		mouse_pos = event.position
+	
 	if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
-		previous_rotation = $ViewAnchor.rotation.y
 		mouse_pressed = event.pressed
+		mouse_pos = event.position
+		if not event.pressed:
+			drag_start_angle = $ViewAnchor.rotation.y
