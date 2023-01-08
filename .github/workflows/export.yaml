@@ -4,14 +4,17 @@ on: push
 env:
   RUST_BACKTRACE: full
   ANDROID_HOME: /opt/android-sdk
+  ANDROID_SDK_ROOT: /opt/android-sdk
   EXPORT_NAME: rustymon-mobile
   ANDROID_NDK_FILENAME: android-ndk-r22b-linux-x86_64
+  ANDROID_NDK_VERSION: android-ndk-r22b-linux-x86_64
   COMMANDLINETOOLS_VERSION: 9123335
   SDKMANAGER_CMAKE_VERSION: 3.10.2.4988404
   SDKMANAGER_NDK_VERSION: 21.4.7075529
   SDKMANAGER_BUILDTOOLS_VERSION: 30.0.3
   ANDROID_PLATFORM_VERSION: 29
-  
+  GODOT_VERSION: 3.5.1
+
 jobs:
   build-librustymon-ws:
     name: Build librustymon_ws
@@ -20,12 +23,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          #- target: wasm32-unknown-emscripten
+          #  arch: wasm
+          #  system: web
           - target: x86_64-unknown-linux-gnu
             arch: x86-64
             system: linux
           - target: aarch64-linux-android
             arch: aarch64
             system: android
+          #- target: armv7-linux-androideabi
+          #  arch: armv7a
+          #  system: android
           - target: x86_64-linux-android
             arch: x86-64
             system: android
@@ -41,6 +50,20 @@ jobs:
         run: |
           rustup target add ${{ matrix.target }}
           rustup update
+      - name: Build for WASM using emscripten
+        run: |
+          set -x
+          rustup toolchain install nightly
+          rustup target add wasm32-unknown-emscripten --toolchain nightly
+          git clone https://github.com/emscripten-core/emsdk --depth 1
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          cd ../rustymon-ws
+          source ../emsdk/emsdk_env.sh
+          C_INCLUDE_PATH=../emsdk/upstream/emscripten/cache/sysroot/include RUST_BACKTRACE=full time cargo +nightly build --target wasm32-unknown-emscripten --lib
+          cp -v target/wasm32-unknown-emscripten/release/rustymon_ws.wasm ../librustymon_ws_web.wasm
+        if: ${{ matrix.system == 'web' }}
       - name: Setup Android NDK
         run: |
           set -x
@@ -50,9 +73,9 @@ jobs:
           mv cmdline-tools $ANDROID_HOME
           rm -vf commandlinetools-linux-*_latest.zip
           wget https://dl.google.com/android/repository/${ANDROID_NDK_FILENAME}.zip -q
-          unzip -q ${ANDROID_NDK_FILENAME}.zip -d ${ANDROID_NDK_FILENAME} && rm ${ANDROID_NDK_FILENAME}.zip -v
+          unzip -q ${ANDROID_NDK_FILENAME}.zip -d android-ndk-unzipped && rm ${ANDROID_NDK_FILENAME}.zip -v
           mkdir -pv $ANDROID_HOME/ndk
-          mv $ANDROID_NDK_FILENAME $ANDROID_HOME/ndk/$ANDROID_NDK_FILENAME
+          mv android-ndk-unzipped/android-ndk-r22b ${ANDROID_HOME}/ndk/${ANDROID_NDK_FILENAME} && rmdir -v android-ndk-unzipped
           export PATH="${ANDROID_HOME}/cmdline-tools/cmdline-tools/bin:${PATH}"
           yes | sdkmanager --licenses
           time sdkmanager "platform-tools" "build-tools;$SDKMANAGER_BUILDTOOLS_VERSION" "platforms;android-$ANDROID_PLATFORM_VERSION" "cmdline-tools;latest" "cmake;$SDKMANAGER_CMAKE_VERSION" "ndk;$SDKMANAGER_NDK_VERSION"
@@ -60,14 +83,55 @@ jobs:
       - name: Build rust libraries
         run: |
           set -x
-          LINKER_PATH="${ANDROID_HOME}/ndk/${ANDROID_NDK_FILENAME}/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ matrix.target }}${ANDROID_PLATFORM_VERSION}-clang++"
-          echo "Calculated linker path: $LINKER_PATH"
-          ls -l "${LINKER_PATH}" && echo -e "[target.${{ matrix.target }}]\nlinker = \"${LINKER_PATH}\"" >> Cargo.toml || echo "not on Android"
+          #export
+          #LINKER_PATH="${ANDROID_HOME}/ndk/${ANDROID_NDK_FILENAME}/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ matrix.target }}${ANDROID_PLATFORM_VERSION}-clang++"
+          #echo "Calculated linker path: $LINKER_PATH"
+          #ls -l "${LINKER_PATH}" && echo -e "\n\n[target.${{ matrix.target }}]\nlinker = \"${LINKER_PATH}\"\n" >> Cargo.toml || echo "not on Android"
+          export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER="${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_FILENAME}/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi29-clang"
+          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_FILENAME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang"
+          export CARGO_TARGET_I686_LINUX_ANDROID_LINKER="${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_FILENAME}/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android29-clang"
+          export CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER="${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_FILENAME}/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang"
+          #cat Cargo.toml || echo fail
+          #cat .cargo/config.toml || echo fail
+          export
           time cargo build -r --target ${{ matrix.target }}
           ls -la target/${{ matrix.target }}/release
           mv -v target/${{ matrix.target }}/release/librustymon_ws.so ../librustymon_ws_${{ matrix.system }}_${{ matrix.arch }}.so
         working-directory: rustymon-ws
+        if: ${{ matrix.system != 'web' }}
       - uses: actions/upload-artifact@v3
         with:
-          name: librustymon_ws_${{ matrix.system }}_${{ matrix.arch }}.so
-          path: librustymon_ws_${{ matrix.system }}_${{ matrix.arch }}.so
+          name: librustymon_ws_${{ matrix.system }}_${{ matrix.arch }}
+          path: librustymon_ws_${{ matrix.system }}*${{ matrix.arch }}*
+
+  export-game:
+    name: Export the game
+    runs-on: ubuntu-22.04
+#    needs:
+#      - build-librustymon-ws
+    container:
+      image: barichello/godot-ci:3.5.1
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: Windows
+          #- target: Android
+          - target: HTML5
+          - target: Linux
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Export game for ${{ matrix.target }}
+        run: |
+          mkdir -v -p ~/.local/share/godot/templates builds
+          mv /root/.local/share/godot/templates/${GODOT_VERSION}.stable ~/.local/share/godot/templates/${GODOT_VERSION}.stable
+          ls -la ~/.local/share/godot/templates/${GODOT_VERSION}.stable
+          godot -v --export "${{ matrix.target }}"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.target }}
+          path: builds/*
