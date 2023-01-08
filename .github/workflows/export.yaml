@@ -1,0 +1,73 @@
+name: "Export the game"
+on: push
+
+env:
+  RUST_BACKTRACE: full
+  ANDROID_HOME: /opt/android-sdk
+  EXPORT_NAME: rustymon-mobile
+  ANDROID_NDK_FILENAME: android-ndk-r22b-linux-x86_64
+  COMMANDLINETOOLS_VERSION: 9123335
+  SDKMANAGER_CMAKE_VERSION: 3.10.2.4988404
+  SDKMANAGER_NDK_VERSION: 21.4.7075529
+  SDKMANAGER_BUILDTOOLS_VERSION: 30.0.3
+  ANDROID_PLATFORM_VERSION: 29
+  
+jobs:
+  build-librustymon-ws:
+    name: Build librustymon_ws
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            arch: x86-64
+            system: linux
+          - target: aarch64-linux-android
+            arch: aarch64
+            system: android
+          - target: x86_64-linux-android
+            arch: x86-64
+            system: android
+          - target: i686-linux-android
+            arch: x86
+            system: android
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Setup rust
+        run: |
+          rustup target add ${{ matrix.target }}
+          rustup update
+      - name: Setup Android NDK
+        run: |
+          set -x
+          mkdir -pv $ANDROID_HOME
+          wget https://dl.google.com/android/repository/commandlinetools-linux-${COMMANDLINETOOLS_VERSION}_latest.zip -q
+          unzip -q commandlinetools-linux-*_latest.zip -d cmdline-tools
+          mv cmdline-tools $ANDROID_HOME
+          rm -vf commandlinetools-linux-*_latest.zip
+          wget https://dl.google.com/android/repository/${ANDROID_NDK_FILENAME}.zip -q
+          unzip -q ${ANDROID_NDK_FILENAME}.zip -d ${ANDROID_NDK_FILENAME} && rm ${ANDROID_NDK_FILENAME}.zip -v
+          mkdir -pv $ANDROID_HOME/ndk
+          mv $ANDROID_NDK_FILENAME $ANDROID_HOME/ndk/$ANDROID_NDK_FILENAME
+          export PATH="${ANDROID_HOME}/cmdline-tools/cmdline-tools/bin:${PATH}"
+          yes | sdkmanager --licenses
+          time sdkmanager "platform-tools" "build-tools;$SDKMANAGER_BUILDTOOLS_VERSION" "platforms;android-$ANDROID_PLATFORM_VERSION" "cmdline-tools;latest" "cmake;$SDKMANAGER_CMAKE_VERSION" "ndk;$SDKMANAGER_NDK_VERSION"
+        if: ${{ matrix.system == 'android' }}
+      - name: Build rust libraries
+        run: |
+          set -x
+          LINKER_PATH="${ANDROID_HOME}/ndk/${ANDROID_NDK_FILENAME}/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ matrix.target }}${ANDROID_PLATFORM_VERSION}-clang++"
+          echo "Calculated linker path: $LINKER_PATH"
+          ls -l "${LINKER_PATH}" && echo -e "[target.${{ matrix.target }}]\nlinker = \"${LINKER_PATH}\"" >> Cargo.toml || echo "not on Android"
+          time cargo build -r --target ${{ matrix.target }}
+          ls -la target/${{ matrix.target }}/release
+          mv -v target/${{ matrix.target }}/release/librustymon_ws.so ../librustymon_ws_${{ matrix.system }}_${{ matrix.arch }}.so
+        working-directory: rustymon-ws
+      - uses: actions/upload-artifact@v3
+        with:
+          name: librustymon_ws_${{ matrix.system }}_${{ matrix.arch }}.so
+          path: librustymon_ws_${{ matrix.system }}_${{ matrix.arch }}.so
