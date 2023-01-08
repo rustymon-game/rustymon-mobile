@@ -94,6 +94,17 @@ config/icon="res://icon.png"
 
 TouchInputManager="*res://dependencies/GodotTouchInputManager/InputManager.gd"
 
+[debug]
+
+settings/crash_handler/message="You can report any bugs you find on https://github.com/rustymon-game/rustymon-mobile/issues"
+
+[display]
+
+window/size/width=1280
+window/size/height=720
+window/dpi/allow_hidpi=true
+window/handheld/orientation="sensor_portrait"
+
 [gui]
 
 common/drop_mouse_on_gui_input_disabled=true
@@ -105,6 +116,10 @@ pointing/emulate_touch_from_mouse=true
 [layer_names]
 
 3d_physics/layer_2="camera_raycast_floor"
+
+[logging]
+
+file_logging/enable_file_logging=true
 
 [mono]
 
