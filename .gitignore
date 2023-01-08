@@ -3,3 +3,5 @@
 .mono
 *.apk
 *.exe
+*.so
+builds
