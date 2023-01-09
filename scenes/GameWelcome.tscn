@@ -1,0 +1,104 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://scripts/GameWelcome.gd" type="Script" id=4]
+
+[node name="GameWelcome" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 4 )
+
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -253.5
+margin_top = 32.0
+margin_right = 253.5
+margin_bottom = 277.0
+text = "Rustymon
+(insert Logo here)"
+
+[node name="ControlBaseContainer" type="PanelContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 20.0
+margin_top = 300.0
+margin_right = -20.0
+margin_bottom = -20.0
+
+[node name="GridContainer" type="GridContainer" parent="ControlBaseContainer"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 493.0
+margin_bottom = 633.0
+columns = 2
+
+[node name="UsernameLabel" type="Label" parent="ControlBaseContainer/GridContainer"]
+margin_top = 5.0
+margin_right = 241.0
+margin_bottom = 19.0
+size_flags_horizontal = 3
+text = "Username"
+
+[node name="UsernameInput" type="LineEdit" parent="ControlBaseContainer/GridContainer"]
+margin_left = 245.0
+margin_right = 486.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+placeholder_text = "Username"
+
+[node name="PasswordLabel" type="Label" parent="ControlBaseContainer/GridContainer"]
+margin_top = 33.0
+margin_right = 241.0
+margin_bottom = 47.0
+text = "Password"
+
+[node name="PasswordInput" type="LineEdit" parent="ControlBaseContainer/GridContainer"]
+margin_left = 245.0
+margin_top = 28.0
+margin_right = 486.0
+margin_bottom = 52.0
+secret = true
+placeholder_text = "Password"
+
+[node name="CustomServerLabel" type="Label" parent="ControlBaseContainer/GridContainer"]
+margin_top = 69.0
+margin_right = 241.0
+margin_bottom = 83.0
+text = "Use custom server"
+
+[node name="CustomServerCheckBox" type="CheckButton" parent="ControlBaseContainer/GridContainer"]
+margin_left = 245.0
+margin_top = 56.0
+margin_right = 486.0
+margin_bottom = 96.0
+
+[node name="ServerAddressLabel" type="Label" parent="ControlBaseContainer/GridContainer"]
+visible = false
+margin_top = 103.0
+margin_right = 241.0
+margin_bottom = 117.0
+text = "Server Address"
+
+[node name="ServerAddressInput" type="LineEdit" parent="ControlBaseContainer/GridContainer"]
+visible = false
+margin_left = 245.0
+margin_top = 100.0
+margin_right = 486.0
+margin_bottom = 124.0
+
+[node name="LoginButton" type="Button" parent="ControlBaseContainer/GridContainer"]
+margin_top = 100.0
+margin_right = 241.0
+margin_bottom = 120.0
+text = "Login"
+
+[node name="RegisterButton" type="Button" parent="ControlBaseContainer/GridContainer"]
+margin_left = 245.0
+margin_top = 100.0
+margin_right = 486.0
+margin_bottom = 120.0
+text = "Register"
+
+[connection signal="toggled" from="ControlBaseContainer/GridContainer/CustomServerCheckBox" to="." method="_on_CustomServerCheckBox_toggled"]
+[connection signal="pressed" from="ControlBaseContainer/GridContainer/LoginButton" to="." method="_on_LoginButton_pressed"]
+[connection signal="pressed" from="ControlBaseContainer/GridContainer/RegisterButton" to="." method="_on_RegisterButton_pressed"]

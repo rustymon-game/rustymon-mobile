@@ -1,6 +1,8 @@
 .idea/
 .import
 .mono
+*.dll
+*.wasm
 *.apk
 *.exe
 *.so
