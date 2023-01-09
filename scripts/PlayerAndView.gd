@@ -1,8 +1,5 @@
 extends CSGBox
 
-# for scrolling, the highest (max) value; the min value is zero
-const MAX_SCROLLING = 36
-
 # length of the ray used for mouse point tracing (must be > 100)
 const RAY_LENGTH = 500
 
@@ -29,9 +26,6 @@ var start_dragging_pos  # type: Vector3
 
 # for dragging, the start Y position of the camera
 var drag_start_angle = 0
-
-# for scrolling, the current scroll level
-var current_scrolling = 5
 
 
 # Called when the node enters the scene tree for the first time.
@@ -77,10 +71,18 @@ func _input(event):
 	
 	if event is InputEventScreenDrag:
 		mouse_pos = event.position
+	
+	if event is InputEventScreenTouch:
+		if event.index == 0:
+		#if not event.pressed:
+			mouse_pressed = event.pressed
+		#elif event.index == 0 and event.pressed:
+			mouse_pos = event.position
 
 	if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
 		mouse_pressed = event.pressed
 		mouse_pos = event.position
+
 
 func recompute_zoom():
 	if zoom > max_zoom:
@@ -90,7 +92,14 @@ func recompute_zoom():
 
 	var t = 1.0 - zoom
 	t = t * t
-
+	
+	var a = Quat(zoom_min.transform.basis)
+	var b = Quat(zoom_max.transform.basis)
 	$ViewAnchor/PlayerView.fov = lerp(min_fov, max_fov, t)
-	$ViewAnchor/PlayerView.transform.origin = zoom_min.transform.origin.linear_interpolate(zoom_max.transform.origin, t)
-	$ViewAnchor/PlayerView.transform.basis = zoom_min.transform.basis.slerp(zoom_max.transform.basis, t)
+	
+	$ViewAnchor/PlayerView.transform.origin = Vector3(
+		lerp(zoom_min.transform.origin.x, zoom_max.transform.origin.x, t),
+		lerp(zoom_min.transform.origin.y, zoom_max.transform.origin.y, t * t),
+		lerp(zoom_min.transform.origin.z, zoom_max.transform.origin.z, t)
+	)
+	$ViewAnchor/PlayerView.transform.basis = Basis(a.cubic_slerp(b, a, b, t))

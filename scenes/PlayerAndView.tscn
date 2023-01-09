@@ -3,7 +3,7 @@
 [ext_resource path="res://scripts/PlayerAndView.gd" type="Script" id=1]
 
 [sub_resource type="CylinderShape" id=1]
-height = 50.0
+height = 100.0
 radius = 200.0
 
 [node name="Player" type="CSGBox"]
@@ -11,6 +11,7 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0 )
 script = ExtResource( 1 )
 zoom_min_path = NodePath("ViewAnchor/ZoomMin")
 zoom_max_path = NodePath("ViewAnchor/ZoomMax")
+max_zoom = 0.65
 min_fov = 80.0
 
 [node name="ViewAnchor" type="Spatial" parent="."]
@@ -21,10 +22,10 @@ transform = Transform( 1, 0, 0, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, 0, 
 far = 150.0
 
 [node name="ZoomMin" type="Position3D" parent="ViewAnchor"]
-transform = Transform( 1, 2.98023e-08, -2.98023e-08, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, -2.38419e-07, 2.28011, 6.08086 )
+transform = Transform( 1, 4.47035e-08, -2.98023e-08, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, -2.38419e-07, 4.98338, 6.08086 )
 
 [node name="ZoomMax" type="Position3D" parent="ViewAnchor"]
-transform = Transform( 1, 0, 0, 0, 0.35633, 0.93436, 0, -0.93436, 0.35633, 0, 58.9182, 23.9753 )
+transform = Transform( 1, 2.98023e-08, 0, 0, 0.35633, 0.93436, 0, -0.934361, 0.35633, 9.53674e-07, 68.157, 20.7028 )
 
 [node name="Area" type="Area" parent="ViewAnchor"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0 )
@@ -32,5 +33,5 @@ collision_layer = 2
 collision_mask = 2
 
 [node name="CollisionShape" type="CollisionShape" parent="ViewAnchor/Area"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 24, 0 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 49, 0 )
 shape = SubResource( 1 )
