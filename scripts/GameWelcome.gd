@@ -76,3 +76,10 @@ func _on_CustomServerCheckBox_toggled(button_pressed):
 	else:
 		$ControlBaseContainer/GridContainer/ServerAddressInput.hide()
 		$ControlBaseContainer/GridContainer/ServerAddressLabel.hide()
+
+
+func _on_StartGameDebugButton_pressed():
+	var world_scene = preload("res://scenes/World.tscn").instance()
+	get_tree().get_root().add_child(world_scene)
+	print("tree ", SceneTree, " / ", self)
+	get_tree().get_root().remove_child(self)

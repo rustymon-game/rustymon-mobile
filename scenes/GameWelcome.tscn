@@ -99,6 +99,20 @@ margin_right = 486.0
 margin_bottom = 120.0
 text = "Register"
 
+[node name="StartGameDebugButton" type="Button" parent="ControlBaseContainer/GridContainer"]
+margin_top = 124.0
+margin_right = 241.0
+margin_bottom = 144.0
+text = "Start Game Directly (Debug)"
+
+[node name="UnusedButton" type="Button" parent="ControlBaseContainer/GridContainer"]
+margin_left = 245.0
+margin_top = 124.0
+margin_right = 486.0
+margin_bottom = 144.0
+text = "Unused Button"
+
 [connection signal="toggled" from="ControlBaseContainer/GridContainer/CustomServerCheckBox" to="." method="_on_CustomServerCheckBox_toggled"]
 [connection signal="pressed" from="ControlBaseContainer/GridContainer/LoginButton" to="." method="_on_LoginButton_pressed"]
 [connection signal="pressed" from="ControlBaseContainer/GridContainer/RegisterButton" to="." method="_on_RegisterButton_pressed"]
+[connection signal="pressed" from="ControlBaseContainer/GridContainer/StartGameDebugButton" to="." method="_on_StartGameDebugButton_pressed"]
